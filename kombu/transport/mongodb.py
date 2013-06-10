@@ -16,7 +16,7 @@ import pymongo
 
 from pymongo import errors
 from anyjson import loads, dumps
-from pymongo.connection import Connection
+from pymongo import MongoClient, MongoReplicaSetClient
 
 from kombu.exceptions import StdConnectionError, StdChannelError
 
@@ -133,7 +133,10 @@ class Channel(virtual.Channel):
         #
         #   mongodb://[username:password@]host1[:port1][,host2[:port2],
         #   ...[,hostN[:portN]]][/[?options]]
-        mongoconn = Connection(host=hostname, ssl=conninfo.ssl)
+        if 'replicaSet' in conninfo.transport_options:
+            mongoconn = MongoReplicaSetClient(host=hostname, ssl=conninfo.ssl, **conninfo.transport_options)
+        else:
+            mongoconn = MongoClient(host=hostname, ssl=conninfo.ssl)
         version = mongoconn.server_info()['version']
         if tuple(map(int, version.split('.')[:2])) < (1, 3):
             raise NotImplementedError(
